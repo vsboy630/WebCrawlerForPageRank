@@ -3,6 +3,12 @@ Using Chrome v87
 # WebCrawlerForPageRank
 Preprocess the web links
 
+PageRank – with teleporting
+
+List of 100 top most important X, and their associated
+PageRanks
+
+
 
 Part 1: Crawl (30%)
 Crawl data
