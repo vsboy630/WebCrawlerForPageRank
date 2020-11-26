@@ -2,19 +2,26 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.json.Json;
+
+
 
 /*
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,11 +61,15 @@ public class GoogleSearch {
     		
     		List<String> valueList = me.getValue();
     		
-    		pw.append(key + ",");
+    		//pw.append(key + ",");
+    		System.out.println("Seed" + "--> " + key);
+    		//System.out.println("\n");
     		
     		for(String s : valueList) {
     			
-    			pw.append(s +",");
+    			//pw.append(s +",");
+    			System.out.println(s);
+    			//System.out.println("\n");
     		}
     		
     		
@@ -69,6 +80,132 @@ public class GoogleSearch {
 
             pw.flush();
             pw.close();
+    }
+    
+    
+    public static boolean check_pagerank(HashMap<String,Double> a, HashMap<String,Double> b) throws IOException{
+    	
+    	int i = 0;
+    	
+    	for(HashMap.Entry<String, Double> me :a.entrySet()) {
+    		
+    		String key_ = me.getKey();
+    		i++;
+    		
+    		if(a.get(key_) == b.get(key_)) {
+    			
+    			System.out.println("i = " + i);
+    			
+    			return false;
+    		}
+    	}
+    	
+    	return true;
+    	
+    }
+    
+    public static HashMap<String, Double> sortByValue(HashMap<String, Double> hm) { 
+        // Create a list from elements of HashMap 
+        List<Map.Entry<String, Double> > list = new LinkedList<Map.Entry<String, Double> >(hm.entrySet()); 
+  
+        // Sort the list 
+        Collections.sort(list, new Comparator<Map.Entry<String, Double> >() { 
+            public int compare(Map.Entry<String, Double> o1,  
+                               Map.Entry<String, Double> o2) 
+            { 
+                return (o1.getValue()).compareTo(o2.getValue()); 
+            } 
+        }); 
+          
+        // put data from sorted list to hashmap  
+        HashMap<String, Double> temp = new LinkedHashMap<String, Double>(); 
+        for (Map.Entry<String, Double> aa : list) { 
+            temp.put(aa.getKey(), aa.getValue()); 
+        } 
+        return temp; 
+    } 
+    
+    public static void PRcalculator(Map<String, List<String>> inCome,HashMap<String,  Integer> outPut) throws IOException {
+    	
+    	HashMap<String,Double> pagerank_table = new HashMap<String, Double>();
+    	HashMap<String,Double> pagerank_table_update = new HashMap<String, Double>();
+    	
+    	
+    	double size = outPut.size();
+    	
+    	double ini_pr = 1/size;
+    	int counter = 0;
+    	
+    	System.out.println(size);
+
+    	
+    	
+    	for(HashMap.Entry<String, Integer> me :outPut.entrySet()) {
+    		
+    		String key = me.getKey();
+    		pagerank_table.put(key, ini_pr);
+    		//System.out.println(key + " **** " + ini_pr);
+    	}
+    	
+    	
+    	while(check_pagerank(pagerank_table,pagerank_table_update)) {
+
+    		pagerank_table_update = new HashMap<String,Double>(pagerank_table);
+        	
+    		
+        	for(HashMap.Entry<String, Double> me :pagerank_table.entrySet()) {
+        		
+        		double temSum = 0;
+        		
+        		try {
+        			
+            		String key_ = me.getKey();
+            		List<String> outList = inCome.get(key_);
+            		//System.out.println("RCHDBG---key_ " + key_);
+            		
+            		for(String s : outList) {
+            			
+            			temSum = temSum + pagerank_table.get(s)/outPut.get(s);
+            		}
+            		
+            		pagerank_table.put(key_, temSum);
+            		
+            		
+        		}
+        		
+        		catch(Exception e) {
+    				System.out.println("EXCEPT");
+    			}
+        		
+        	}
+        	
+
+        	
+        	counter++;
+    	}
+
+    	
+    	
+    	//print page rank table
+    	/*
+    	for(HashMap.Entry<String, Double> me :pagerank_table.entrySet()) {
+    		
+    		//String key = me.getKey();
+    		//pagerank_table.put(key, ini_pr);
+    		System.out.println("key===>  " + me.getKey() + "   value   " + me.getValue());
+    		
+    	}
+    	*/
+    	
+    	Map<String, Double> hm1 = sortByValue(pagerank_table);
+    	
+    	for (Map.Entry<String, Double> en : hm1.entrySet()) { 
+            System.out.println("Key = " + en.getKey() +  ", Value = " + en.getValue()); 
+        } 
+    	
+    	
+    	
+    	
     }
 
 	public static void main(String[] args) throws IOException {
@@ -104,7 +241,7 @@ public class GoogleSearch {
 			var size = queue.size();
 			var RCH_flag = 0;
 			
-			while(size-- != 0 && RCH_flag <= 20) {
+			while(size-- != 0 && RCH_flag <= 8) {
 				
 				String temp_url = queue.element();
 				
@@ -114,7 +251,7 @@ public class GoogleSearch {
 				
 				driver.get(temp_url);
 				
-				System.out.println("Current Crawling Website : " + temp_url);
+				//System.out.println("Current Crawling Website : " + temp_url);
 				
 				List<WebElement> elementNames = driver.findElements(By.xpath("//a"));
 				
@@ -125,7 +262,7 @@ public class GoogleSearch {
 						
 						if(tmp.startsWith("http://") || tmp.startsWith("https://")) {
 							queue.add(tmp);
-							System.out.println("Crawling Result :"+ i + "--" + tmp);
+							//System.out.println("Crawling Result :"+ i + "--" + tmp);
 						
 
 							if(!web_map.containsKey(tmp)) {
@@ -158,7 +295,7 @@ public class GoogleSearch {
 		
 		writeToCsv_InLink(web_map);
 		
-		
+		PRcalculator(web_map,web_index);
 		
 
 		//driver.close();
